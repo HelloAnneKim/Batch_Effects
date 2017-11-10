@@ -1,0 +1,94 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Version info: R 3.2.3, Biobase 2.30.0, GEOquery 2.40.0, limma 3.26.8
+# R scripts generated  Sun Nov 5 17:09:53 EST 2017
+
+
+Server: www.ncbi.nlm.nih.gov
+Query: acc=GSE37418&platform=GPL570&type=txt&groups=&colors=&selection=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX&padj=fdr&logtransform=auto&columns=ID&columns=adj.P.Val&columns=P.Value&columns=F&columns=Gene+symbol&columns=Gene+title&num=250&annot=ncbi
+
+# SETUP
+```{r}
+#   Boxplot for selected GEO samples
+library(Biobase)
+library(GEOquery)
+
+# load series and platform data from GEO
+source("https://bioconductor.org/biocLite.R")
+
+gset <- getGEO("GSE37418", GSEMatrix =TRUE, getGPL=FALSE)
+if (length(gset) > 1) idx <- grep("GPL570", attr(gset, "names")) else idx <- 1
+gset <- gset[[idx]]
+expression_samples <- exprs(gset)
+subgroups <- gset@phenoData@data$`subgroup:ch1`
+expression_subgroup_samples <- rbind(expression_samples, subgroups)
+subgroups <- expression_subgroup_samples[nrow(expression_subgroup_samples),]
+```
+
+# Dendrogram Clustering
+# https://rpubs.com/gaston/dendrograms
+```{r}
+install.packages(ape)
+dm = dist(t(expression_samples),method="euclidean")
+hc = hclust(dm, method="single")
+clus4 = cutree(hc, 4)
+# G3, G4, WNT, SHH, UorSHH OUTLIER
+mypal = c("#556270", "#4ECDC4", "#1B676B", "#FF6B6B", "#C44D58")
+op = par(bg = "#E8DDCB")
+# plot.phylo(as.phylo(hc), type= "fan", tip.color = mypal[clus4], label.offset = 1, cex = 0.5, col = "red",no.margin = TRUE)
+plot.phylo(as.phylo(hc), type= "fan",  label.offset = 1, cex = 0.5, col = "red",no.margin = TRUE)
+```
+
+# TODO
+```{r}
+# function to get color labels
+colLab <- function(n) {
+  if (is.leaf(n)) {
+    a <- attributes(n)
+    labCol <- labelColors[clusMember[which(names(clusMember) == a$label)]]
+    attr(n, "nodePar") <- c(a$nodePar, lab.col = labCol)
+  }
+  n
+}
+
+# using dendrapply
+clusDendro = dendrapply(hcd, colLab)
+
+# make plot
+plot(clusDendro, main = "Cool Dendrogram", type = "triangle")
+```
+
+
+
+
+
+# KMeans Clustering
+kmeans(t(ex), 4)
+clustering <- kmeans(t(ex), 4)
+
+# KMeans Graphing Clusters
+# TODO kmeans
+# https://datascienceplus.com/k-means-clustering-in-r/
+library(ggplot2)
+# TODO hier
+# https://www.r-bloggers.com/hierarchical-clustering-in-r-2/
+
+
+
+# PCA
+sj.pca <- prcomp(t(ex)) 
+plot(predict(sj.pca))
+
+
+# set parameters and draw the plot
+
+<!-- dev.new(width=4+dim(gset)[[2]]/5, height=6) -->
+<!-- par(mar=c(2+round(max(nchar(sampleNames(gset)))/2),4,2,1)) -->
+<!-- title <- paste ("GSE37418", '/', annotation(gset), " selected samples", sep ='') -->
+<!-- boxplot(exprs(gset), boxwex=0.7, notch=T, main=title, outline=FALSE, las=2) -->
+
+
+
